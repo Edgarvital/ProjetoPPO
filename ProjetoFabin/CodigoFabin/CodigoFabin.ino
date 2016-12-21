@@ -20,6 +20,9 @@
 #define diferencaTempMin 10
 float diferencaTemp;
 
+//Vazão Da Agua
+float vazaoAgua;
+
 //PINO DA VALVULA DO RESERVATORIO
 int pino_valvula_reservatorio = 7;
 
@@ -106,7 +109,8 @@ void loop(){
    float temperaturaReservAquecido = mostrarTemperaturaReservAquecido();
    float temperaturaReserv = mostrarTemperaturaReserv();
    float distancia = mostrarDistancia();
-   float vazao = mostrarVazaoGas();
+   float vazaoGaz = mostrarVazaoGas();
+   vazaoAgua = mosrarVazaoAgua();
    String data = mostrarData();  
    String hora = mostrarHora();
    String diaDaSemana = mostrarDiaDaSemana();    
@@ -147,15 +151,14 @@ void loop(){
 
 //**FUNÇÃO DA AUTOMAÇÃO**
 void trocaDeAgua(){
+ vazaoAgua = 0;
   if(diferencaTemp < diferencaTempMin){
       ligarValvulaBomba();
-      ligarBomba();
       ligarValvulaReservatorio();
-      delay(234000);
-      desligarBomba();
-      desligarValvulaBomba();
-      delay(60000);
-      desligarValvulaReservatorio();
+      if(vazaoAgua == 20){
+        desligarValvulaBomba();
+        desligarValvulaReservatorio();
+      }
    }
 }
 
@@ -266,8 +269,15 @@ String mostrarDiaDaSemana(){
   return dia;
 }
 
-//**FUNÇÕES DO SENSOR DE VAZÃO DE GÁS**
+//**FUNÇÕES DO SENSOR DE VAZÃO**
 float mostrarVazaoGas(){
+  float liters = pulses;
+  liters /= 7.5;
+  liters /= 60;
+  return liters *= 1000;
+}
+
+float mostrarVazaoDeAgua(){
   float liters = pulses;
   liters /= 7.5;
   liters /= 60;
