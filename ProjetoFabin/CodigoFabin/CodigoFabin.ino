@@ -17,7 +17,8 @@
 #define FLOWSENSORPIN 2
 
 //DIFERENÇA DE TEMPERATURA
-#define diferencaTemp 10
+#define diferencaTempMin 10
+float diferencaTemp;
 
 //PINO DA VALVULA DO RESERVATORIO
 int pino_valvula_reservatorio = 7;
@@ -63,7 +64,7 @@ volatile float flowrate;
 void setup(void)
 {
   Serial.begin(9600);
-  Serial.print("DiaDaSemana;Data;Hora;TemperaturaAgua;Distancia;TemperaturaAmbiente;Vazao;\n"); 
+  Serial.print("DiaDaSemana;Data;Hora;TemperaturaReservatorioAquecido;TemperaturaReservatorio;Distancia;TemperaturaAmbiente;Vazao;\n"); 
   temperature.begin();
   iniciaComunicacaoSD();
   if (!temperature.getAddress(address, 0)) 
@@ -109,19 +110,8 @@ void loop(){
    String data = mostrarData();  
    String hora = mostrarHora();
    String diaDaSemana = mostrarDiaDaSemana();    
-
-   if(temperaturaReservAquecido > (temperaturaReserv-diferencaTemp)){
-      ligarValvulaBomba();
-      ligarBomba();
-      ligarValvulaReservatorio();
-      delay(234000);
-      desligarBomba();
-      desligarValvulaBomba();
-      delay(60000);
-      desligarValvulaReservatorio();
-   }
-   
-   
+   diferencaTemp = temperaturaReservAquecido - temperaturaReserv;   
+      
    Serial.print(diaDaSemana);
    Serial.print(";");
    Serial.print(data);
@@ -149,6 +139,24 @@ void loop(){
    gravarSDf(vazao);
    gravarSDf(-100);
    delay(12000);
+
+   if(hora.toInt() > 6 && hora.toInt() < 18){
+      trocaDeAgua();
+   }
+}
+
+//**FUNÇÃO DA AUTOMAÇÃO**
+void trocaDeAgua(){
+  if(diferencaTemp < diferencaTempMin){
+      ligarValvulaBomba();
+      ligarBomba();
+      ligarValvulaReservatorio();
+      delay(234000);
+      desligarBomba();
+      desligarValvulaBomba();
+      delay(60000);
+      desligarValvulaReservatorio();
+   }
 }
 
 //**FUNÇÕES DO SENSOR DE TEMPERATURA INTERNA**
@@ -201,6 +209,7 @@ void iniciaComunicacaoSD(){
 }
 
 void gravarSDf(float sensor){
+  SD.begin(pinoCartaoSD);
   File dataFile = SD.open("arquivo.txt", FILE_WRITE);
   if(count == 0){
     dataFile.println("Temperatura;Distancia;DiaDaSemana;Data;Hora;Vazão;");
@@ -224,6 +233,7 @@ void gravarSDf(float sensor){
 }
 
 void gravarSDs(String sensor){
+  SD.begin(pinoCartaoSD);
   File dataFile = SD.open("arquivo.txt", FILE_WRITE);
     if (dataFile) 
     {
@@ -318,5 +328,4 @@ void ligarBomba(){
 }
 
 void desligarBomba(){
-  digitalWrite(pino_bomba, LOW);
 }
